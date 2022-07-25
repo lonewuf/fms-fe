@@ -12,6 +12,7 @@ import { Auth, AuthActionTypes } from './store/auth/types';
 import TransactionListView from './components/transaction/ListView';
 import { useTypedSelector, store } from './store';
 import CreateTransaction from './components/transaction/TransactionCreate';
+import TransactionView from './components/transaction/TransactionView';
 
 if (localStorage.jwtToken) {
   setAuthToken(localStorage.jwtToken)  
@@ -45,7 +46,7 @@ function App() {
               } />
               <Route path='transaction/:_id' element= {
                   <PrivateRoute auth={authState}>
-                    <h1>sad</h1>
+                    <TransactionView />
                   </PrivateRoute>
               } />
 

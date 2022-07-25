@@ -1,9 +1,9 @@
-import { Button, Space, Table, Tag } from 'antd';
+import { Button, Card, Col, Form, Row, Select, Space, Table, Tag, Upload } from 'antd';
 import React, { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import axios from '../../api/axios';
-import axiosRequest, { Method } from '../../api/request';
 import { useTypedSelector } from '../../store';
+import { Document, Page } from 'react-pdf'
 
 const { Column, ColumnGroup } = Table;
 
@@ -51,11 +51,17 @@ export enum Status {
 	DONE = 'DONE'
 }
 
+export enum TransactionType {
+	ACCREDITATION = 'ACCREDITATION',
+	COMPLETION = 'COMPLETION',
+	TUTORIAL = 'TUTORIAL'
+}
+
 interface DataType {
   _id: string
 	student: User
 	approvedBy?: User
-	transactionType: User
+	transactionType: TransactionType
 	status: Status
 	remarks: String
 	submittedFile?: FileType
@@ -97,76 +103,164 @@ interface DataType {
 const TransactionView: React.FC = () => {
   const navigate = useNavigate()
   const authState = useTypedSelector(state => state.auth)
-  const [ transactions, setTransactions ] = useState<DataType[] | null>(null)
+  const [ transaction, setTransaction ] = useState<DataType | null>(null)
+  const [ mode, setMode ] = useState<'view' | 'approve' | 'update'>('view')
+  const [ numPages, setNumPages ] = useState<number | null>(null)
+  const [ pageNumber, setPageNumber ] = useState(1)
+  const { _id } = useParams()
 
   useEffect(() => {
-    async function getTransactions () {
+    async function getTransaction () {
       try {
-        // const response = await axiosRequest(Method.get, '/transaction')
         const jwtToken = localStorage.getItem('jwtToken')?.split(' ')[1] as string
-        const response = await axios({ method: 'get', url: '/transaction', headers: { 'Authorization': `Bearer ${jwtToken}` }})
-        // if (response.data?.error) {
-        //   console.log(response.response.data.error)
-        //   console.log(response.response.data.message)
+        const response = await axios({ method: 'get', url: `/transaction/${_id}`, headers: { 'Authorization': `Bearer ${jwtToken}` }})
         if (response.data?.error) {
           console.log(response.data.error)
           console.log(response.data.message)
           console.log('error')
         } else {
           console.log(response, 'response')
-          let data = response.data.data as DataType[]
-          data = data.map(item => ({ ...item, key: item._id }))
-          console.log(data, 'data')
-          setTransactions(data)
+          let data = response.data.data as DataType
+          setTransaction(data)
         }
       } catch (err) {
         console.log(err)
       }
     }
-    getTransactions()
+    getTransaction()
   }, [authState])
 
-  const handleCreate = () => {
-    console.log('asd')
+  const handleBack = (id) => {
+    navigate(`/dashboard`)
   }
 
-  const handleApprove = async (id) => {
-    console.log(id, 'approve')
-  }
+	const options = [
+		{
+			type: 'Accreditation',
+			value: 'ACCREDITATION'
+		},
+		{
+			type: 'Completion',
+			value: 'COMPLETION'
+		},
+		{
+			type: 'Tutorial',
+			value: 'TUTORIAL'
+		},
+	]
 
-  const handleNavigate = (id) => {
-    console.log(id, 'navigate')
-    navigate(`/transaction/${id}`)
-  }
+	const dummyRequest = (arg1, arg2) => {
+		console.log('Dummy Request')	
+	}
 
-  return (
-    <>
-      <Button type='primary' onClick={handleCreate} style={{marginBottom: '50px'}}>
-        Create Transaction
-      </Button> 
-      { transactions !== null ?
-        (
-          <>
-            <Table dataSource={transactions} pagination={false}>
-              <ColumnGroup title="Name">
-                <Column title="First Name" dataIndex={['student', 'firstName']} key="firstName" />
-                <Column title="Last Name" dataIndex={['student', 'lastName']} key="lastName" />
-              </ColumnGroup>
-              <Column title="Student Number" dataIndex={'studentNumber'} key="lastName" />
-              <Column title="Type" dataIndex={'transactionType'} key="lastName" />
-              <Column title="Status" dataIndex={'status'} key="lastName" />
-              <ColumnGroup title="Actions">
-                <Column title="Approve" key="approve" dataIndex={'_id'} render={(id) => <Button onClick={() => handleApprove(id)} type='primary'>Approve</Button>}/>
-                <Column title="View" key="view" dataIndex={'_id'} render={(id) => <Button onClick={() => handleNavigate(id)}>View</Button>}/>
-              </ColumnGroup>
-              {/* <Column title="Address" dataIndex="address" key="address" /> */}
-            </Table>
-          </>
-        )
-        : <></>
-      }
-    </>
-  )
+	const getFile = (e: any) => {
+		console.log('Upload event:', e);
+		if (Array.isArray(e)) {
+		  return e;
+		}
+		return e && e.fileList;
+	  };
+
+	const onFinish = async (values: any) => {
+		console.log(values, 'values')
+		const jwtToken = localStorage.getItem('jwtToken')?.split(' ')[1] as string
+		const data = new FormData()
+		data.append('file', values.file[0].originFileObj)
+		// const response = await axiosRequest(Method.post, '/transaction', { transactionType: values.transactionType })
+		const response = await axios({ method: 'post', url: '/transaction', headers: { 'Authorization': `Bearer ${jwtToken}` }, data: {  transactionType: values.transactionType }})
+		if (response.data?.error) {
+			console.log(response.data.error)
+			console.log(response.data.message)
+			console.log('error')
+		} else {
+			console.log(response, 'response')
+			const { _id } = response.data.data
+			const responseUpload = await axios({ method: 'post', url: `/file/upload/submittedFile/${_id}`, headers: { 'Authorization': `Bearer ${jwtToken}`, 'Content-Type': 'multipart/form-data' }, data})
+			if (responseUpload.data.error) {
+				console.log(responseUpload.data.error)
+			} else {
+				navigate('/dashboard')
+			}
+			// dispatch({
+			// 	type: AuthActionTypes.GOT_AUTH_DATA,
+			// 	auth: decoded,
+			// 	isAuthenticated: true
+			// })
+		}
+	}
+
+	const onFinishFailed = (errorInfo: any) => {
+		console.log('Failed:', errorInfo);
+	};
+
+	const onSubmittedDocumentLoadSuccess = ({ numPages }) => {
+		setNumPages(numPages)
+	}
+
+	return (
+		<>
+		<Button type='primary' onClick={handleBack} style={{marginBottom: '50px'}}>
+			Back 
+		</Button> 
+		{ transaction !== null ?
+			(
+			<>
+				<Row>
+				<Col span={8} offset={8}>
+					<Card title="View Transaction">
+					<Form
+					name="basic"
+					// labelCol={{ span: 8 }}
+					initialValues={{ remember: true }}
+					onFinish={onFinish}
+					onFinishFailed={onFinishFailed}
+					autoComplete="off"
+					>
+					<Form.Item label="Transaction Type" name='transactionType' rules={[{ required: true, message: 'Please choose transaction type' }]}>
+						<Select placeholder={transaction.transactionType} >
+						{ options.map(item =>  <Select.Option  key={item.value} value={item.value}>{item.type}</Select.Option> )}
+						</Select>
+					</Form.Item>
+					{
+						transaction.submittedFile?.url ? 
+						// <Document file={{ url: transaction.submittedFile.url }} onLoadSuccess={onSubmittedDocumentLoadSuccess}>
+						// 	<Page pageNumber={pageNumber} />
+						// </Document> 
+						<div>
+							<a href={transaction.submittedFile.url} target="_blank" className="">Submitted File</a>
+						</div>
+						: <p>No submitted file</p>
+					}
+
+					{/* <Form.Item
+						name="file"
+						label="Upload"
+						getValueFromEvent={getFile}
+						// extra="upload"
+					>
+						<Upload name="logo" listType="text"  customRequest={() => console.log('Dummy Request')}>
+						<Button >Click to upload</Button>
+						</Upload>
+					</Form.Item> */}
+
+
+
+					{/* <Form.Item wrapperCol={{ offset: 8, span: 16 }}>
+						<Button type="primary" htmlType="submit">
+						Submit
+						</Button>
+					</Form.Item> */}
+					</Form>
+					</Card>
+				</Col>
+				</Row>
+
+			</>
+			)
+			: <><h1>No transaction found.</h1></>
+		}
+		</>
+	)
 };
 
 export default TransactionView;

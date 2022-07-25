@@ -95,7 +95,7 @@ const Login: React.FC = () => {
 						getValueFromEvent={getFile}
 						// extra="upload"
 					>
-						<Upload name="logo" listType="text" showUploadList={false} customRequest={() => console.log('Dummy Request')}>
+						<Upload name="logo" listType="text" customRequest={() => console.log('Dummy Request')}>
 							<Button >Click to upload</Button>
 						</Upload>
 					</Form.Item>
