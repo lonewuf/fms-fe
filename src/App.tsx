@@ -1,6 +1,6 @@
 import React from 'react';
 import logo from './logo.svg';
-import { BrowserRouter as Router, Route, Routes } from 'react-router-dom'
+import { BrowserRouter as Router, Link, Route, Routes } from 'react-router-dom'
 import Login from './components/auth/Login';
 import Register from './components/auth/Register';
 import Layout from './components/layout/Layout';
@@ -31,7 +31,7 @@ function App() {
     <Router>
       <Routes>
             <Route path='/' element={<Layout />}>
-              <Route index element={<h1>myTest</h1>} />
+              <Route index element={<Link to="/login">Click here to login</Link>} />
               <Route path="login" element={<Login />} />
               <Route path="register" element={<Register />} />
               <Route path='dashboard' element= {

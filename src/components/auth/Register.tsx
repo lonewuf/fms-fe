@@ -1,15 +1,24 @@
 import { Button, Card, Checkbox, Col, Form, Input, Row } from 'antd';
 import jwtDecode from 'jwt-decode';
-import React from 'react';
+import React, { useEffect } from 'react';
 import { useDispatch } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
 import axiosRequest, { Method } from '../../api/request';
+import { useTypedSelector } from '../../store';
 import { AuthActionTypes } from '../../store/auth/types';
 import setAuthToken from '../../utils/setAuthToken';
 
 const Register: React.FC = () => {
 	const dispatch = useDispatch()	
 	const navigate = useNavigate()
+	const authState = useTypedSelector(state => state.auth)
+
+	useEffect(() => {
+		if(authState.isAuthenticated) {
+			navigate('/dashboard')
+		}
+	})
+
 
 	const onFinish = async (values: any) => {
 		const response = await axiosRequest(Method.post, '/user/register', { ...values })
