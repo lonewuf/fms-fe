@@ -11,8 +11,11 @@ import { useDispatch } from 'react-redux';
 import { Auth, AuthActionTypes } from './store/auth/types';
 import TransactionListView from './components/transaction/ListView';
 import { useTypedSelector, store } from './store';
-import CreateTransaction from './components/transaction/TransactionCreate';
+import CreateTransaction from './components/transaction/CreateTransaction'
+import CreateUser from './components/user/CreateUser'
 import TransactionView from './components/transaction/TransactionView';
+import './App.css'
+import UserListView from './components/user/ListView';
 
 if (localStorage.jwtToken) {
   setAuthToken(localStorage.jwtToken)  
@@ -31,7 +34,7 @@ function App() {
     <Router>
       <Routes>
             <Route path='/' element={<Layout />}>
-              <Route index element={<Link to="/login">Click here to login</Link>} />
+              {/* <Route index element={<Link to="/login">Click here to login</Link>} /> */}
               <Route path="login" element={<Login />} />
               <Route path="register" element={<Register />} />
               <Route path='dashboard' element= {
@@ -39,7 +42,7 @@ function App() {
                   <TransactionListView />
                 </PrivateRoute>
               } />
-              <Route path='transaction' element= {
+              <Route path='transaction/:_operation/:_id' element= {
                   <PrivateRoute auth={authState}>
                     <CreateTransaction />
                   </PrivateRoute>
@@ -49,6 +52,18 @@ function App() {
                     <TransactionView />
                   </PrivateRoute>
               } />
+             <Route path='user' element= {
+                  <PrivateRoute auth={authState}>
+                    <UserListView />
+                  </PrivateRoute>
+              } />
+            <Route path='user/:_operation/:_id' element= {
+                <PrivateRoute auth={authState}>
+                  <CreateUser />
+                </PrivateRoute>
+            } />
+
+
 
             </Route>
      </Routes>

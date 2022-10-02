@@ -1,17 +1,28 @@
-import { Button, Card, Checkbox, Col, Form, Input, Row } from 'antd';
-import jwtDecode from 'jwt-decode';
-import React, { useEffect } from 'react';
+import { Button, Card,  Col, Form, Input, Modal, Row } from 'antd';
+import React, { useEffect, useState } from 'react';
 import { useDispatch } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
 import axiosRequest, { Method } from '../../api/request';
 import { useTypedSelector } from '../../store';
-import { AuthActionTypes } from '../../store/auth/types';
-import setAuthToken from '../../utils/setAuthToken';
+
+
+type ModalContent = {
+	title: string
+	message: string
+}
+
+
+const modalDefaultValues = {
+	title: 'Success',
+	message: 'You successfully created user.'
+}
 
 const Register: React.FC = () => {
 	const dispatch = useDispatch()	
 	const navigate = useNavigate()
 	const authState = useTypedSelector(state => state.auth)
+	const [modalContent, setModalContent] = useState<ModalContent>(modalDefaultValues)
+	const [isModalOpen, setIsModalOpen] = useState(false);
 
 	useEffect(() => {
 		if(authState.isAuthenticated) {
@@ -21,15 +32,19 @@ const Register: React.FC = () => {
 
 
 	const onFinish = async (values: any) => {
-		const response = await axiosRequest(Method.post, '/user/register', { ...values })
-		if (response.response?.data?.error) {
-			console.log(response.response.data.error)
-			console.log(response.response.data.message)
-			console.log('error')
-		} else {
-			navigate('/login')
-		}
+		try {
+			const response = await axiosRequest(Method.post, '/user/register', { ...values })
 
+			if (response.response?.data?.error) {
+				throw new Error(response.response?.data?.message)
+			}
+		} catch (error: any) {
+			setModalContent({
+				title: 'Error',
+				message: error.message
+			})
+		}
+		setIsModalOpen(true)
 	};
 
 	const onFinishFailed = (errorInfo: any) => {
@@ -37,7 +52,16 @@ const Register: React.FC = () => {
 	};
 
 
+	const handleOk = (title: string) => {
+		setIsModalOpen(false)
+		if (title === 'Success') {
+			navigate('/login')
+		}
+		setModalContent(modalDefaultValues)
+	}
+
 	return (
+		<>
 			<Row>
 				<Col span={8} offset={8}>
 					<Card title="Register" >
@@ -89,6 +113,29 @@ const Register: React.FC = () => {
 							<Input.Password />
 						</Form.Item>
 
+						<Form.Item
+							name="confirm"
+							label="Confirm Password"
+							dependencies={['password']}
+							hasFeedback
+							rules={[
+							{
+								required: true,
+								message: 'Please confirm your password!',
+							},
+							({ getFieldValue }) => ({
+								validator(_, value) {
+								if (!value || getFieldValue('password') === value) {
+									return Promise.resolve();
+								}
+								return Promise.reject(new Error('The two passwords that you entered do not match!'));
+								},
+							}),
+							]}
+						>
+							<Input.Password />
+						</Form.Item>
+
 						<Form.Item wrapperCol={{ offset: 8, span: 16 }}>
 							<Button type="primary" htmlType="submit">
 							Submit
@@ -98,6 +145,10 @@ const Register: React.FC = () => {
 					</Card>
 				</Col>
 			</Row>
+			<Modal title={modalContent.title} visible={isModalOpen} onOk={() => handleOk(modalContent.title)}>
+				<p>{modalContent.message}</p>
+			</Modal>
+		</>
 	);
 };
 

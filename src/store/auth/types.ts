@@ -20,7 +20,10 @@ export enum AuthActionTypes {
 
 export enum UserType {
 	STUDENT = 'STUDENT',
-	ADMIN = 'ADMIN'
+	ADMIN = 'ADMIN',
+	CHAIRPERSON = 'CHAIRPERSON',
+	DEAN = 'DEAN',
+	VPAA = 'VPAA'
 }
 
 export interface Auth {

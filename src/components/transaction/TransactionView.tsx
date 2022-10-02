@@ -1,11 +1,8 @@
-import { Button, Card, Col, Form, Row, Select, Space, Table, Tag, Upload } from 'antd';
+import { Button, Card, Col, Form, Row, Select } from 'antd';
 import React, { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import axios from '../../api/axios';
 import { useTypedSelector } from '../../store';
-import { Document, Page } from 'react-pdf'
-
-const { Column, ColumnGroup } = Table;
 
 export enum UserType {
 	STUDENT = 'STUDENT',
@@ -54,7 +51,8 @@ export enum Status {
 export enum TransactionType {
 	ACCREDITATION = 'ACCREDITATION',
 	COMPLETION = 'COMPLETION',
-	TUTORIAL = 'TUTORIAL'
+	TUTORIAL = 'TUTORIAL',
+	OTHERS = 'OTHERS'
 }
 
 interface DataType {
@@ -119,7 +117,6 @@ const TransactionView: React.FC = () => {
           console.log(response.data.message)
           console.log('error')
         } else {
-          console.log(response, 'response')
           let data = response.data.data as DataType
           setTransaction(data)
         }
@@ -149,12 +146,7 @@ const TransactionView: React.FC = () => {
 		},
 	]
 
-	const dummyRequest = (arg1, arg2) => {
-		console.log('Dummy Request')	
-	}
-
 	const getFile = (e: any) => {
-		console.log('Upload event:', e);
 		if (Array.isArray(e)) {
 		  return e;
 		}
@@ -162,15 +154,12 @@ const TransactionView: React.FC = () => {
 	  };
 
 	const onFinish = async (values: any) => {
-		console.log(values, 'values')
 		const jwtToken = localStorage.getItem('jwtToken')?.split(' ')[1] as string
 		const data = new FormData()
 		data.append('file', values.file[0].originFileObj)
 		// const response = await axiosRequest(Method.post, '/transaction', { transactionType: values.transactionType })
 		const response = await axios({ method: 'post', url: '/transaction', headers: { 'Authorization': `Bearer ${jwtToken}` }, data: {  transactionType: values.transactionType }})
 		if (response.data?.error) {
-			console.log(response.data.error)
-			console.log(response.data.message)
 			console.log('error')
 		} else {
 			console.log(response, 'response')
@@ -192,10 +181,6 @@ const TransactionView: React.FC = () => {
 	const onFinishFailed = (errorInfo: any) => {
 		console.log('Failed:', errorInfo);
 	};
-
-	const onSubmittedDocumentLoadSuccess = ({ numPages }) => {
-		setNumPages(numPages)
-	}
 
 	return (
 		<>
@@ -232,24 +217,6 @@ const TransactionView: React.FC = () => {
 						: <p>No submitted file</p>
 					}
 
-					{/* <Form.Item
-						name="file"
-						label="Upload"
-						getValueFromEvent={getFile}
-						// extra="upload"
-					>
-						<Upload name="logo" listType="text"  customRequest={() => console.log('Dummy Request')}>
-						<Button >Click to upload</Button>
-						</Upload>
-					</Form.Item> */}
-
-
-
-					{/* <Form.Item wrapperCol={{ offset: 8, span: 16 }}>
-						<Button type="primary" htmlType="submit">
-						Submit
-						</Button>
-					</Form.Item> */}
 					</Form>
 					</Card>
 				</Col>

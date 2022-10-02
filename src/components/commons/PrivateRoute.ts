@@ -1,8 +1,7 @@
 import { Navigate } from "react-router-dom"
-import { useTypedSelector } from "../../store"
 
 const PrivateRoute = ({ children, auth }) => {
-
+	console.log(auth.isAuthenticated, 'auth.isAuthenticated')
 	if (!auth.isAuthenticated) {
 		Navigate({ to: '/login' })
 		return

@@ -1,19 +1,13 @@
-import { Button, Card, Checkbox, Col, Form, Input, Row, Select, Space, Upload } from 'antd';
+import { Button, Card, Col, Form, Row, Select, Upload } from 'antd';
 import axios from 'axios';
-import jwtDecode from 'jwt-decode';
 import React from 'react';
 import { useDispatch } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
-import axiosRequest, { Method } from '../../api/request';
-import { AuthActionTypes } from '../../store/auth/types';
-import setAuthToken from '../../utils/setAuthToken';
 
 const Login: React.FC = () => {
-	const dispatch = useDispatch()	
 	const navigate = useNavigate()
 
 	const getFile = (e: any) => {
-		console.log('Upload event:', e);
 		if (Array.isArray(e)) {
 		  return e;
 		}
@@ -21,18 +15,14 @@ const Login: React.FC = () => {
 	  };
 
 	const onFinish = async (values: any) => {
-		console.log(values, 'values')
 		const jwtToken = localStorage.getItem('jwtToken')?.split(' ')[1] as string
 		const data = new FormData()
 		data.append('file', values.file[0].originFileObj)
 		// const response = await axiosRequest(Method.post, '/transaction', { transactionType: values.transactionType })
 		const response = await axios({ method: 'post', url: '/transaction', headers: { 'Authorization': `Bearer ${jwtToken}` }, data: {  transactionType: values.transactionType }})
 		if (response.data?.error) {
-			console.log(response.data.error)
-			console.log(response.data.message)
 			console.log('error')
 		} else {
-			console.log(response, 'response')
 			const { _id } = response.data.data
 			const responseUpload = await axios({ method: 'post', url: `/file/upload/submittedFile/${_id}`, headers: { 'Authorization': `Bearer ${jwtToken}`, 'Content-Type': 'multipart/form-data' }, data})
 			if (responseUpload.data.error) {
@@ -67,9 +57,6 @@ const Login: React.FC = () => {
 		},
 	]
 
-	const dummyRequest = (arg1, arg2) => {
-		console.log('Dummy Request')	
-	}
 
 	return (
 		<Row>
