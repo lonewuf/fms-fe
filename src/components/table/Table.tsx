@@ -24,11 +24,11 @@ type DataIndex = keyof DataType;
 
 
 const onChange: TableProps<DataType>['onChange'] = (pagination, filters, sorter, extra) => {
-  console.log(pagination, 'pagination')
-  console.log(filters, 'filters')
-  console.log(sorter, 'sorter')
-  console.log(extra, 'extra')
-  console.log('params', pagination, filters, sorter, extra);
+  // console.log(pagination, 'pagination')
+  // console.log(filters, 'filters')
+  // console.log(sorter, 'sorter')
+  // console.log(extra, 'extra')
+  // console.log('params', pagination, filters, sorter, extra);
 };
 
 type CommonTableProps = {

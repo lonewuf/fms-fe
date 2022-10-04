@@ -233,7 +233,8 @@ const CreateTransaction: React.FC = () => {
 					label="User Type"
 					rules={[{ required: true, message: 'Please choose User Type' }]}
 				>
-					<Select placeholder="Select User Type" >
+					{/* <Select placeholder="Select User Type" disabled={params._operation !== 'view' && authState.auth?.userType !== UserType.STUDENT }> */}
+					<Select placeholder="Select User Type" disabled={params._operation !== 'view' && authState.auth?.userType !== UserType.ADMIN }>
 						<Option value="ADMIN">ADMIN</Option>
 						<Option value="CHAIRPERSON">CHAIRPERSON</Option>
 						<Option value="DEAN">DEAN</Option>
@@ -355,7 +356,7 @@ const CreateTransaction: React.FC = () => {
 						null
 				}
 			</Form>
-			<Modal title={modalContent.title} visible={isModalOpen} onOk={() => handleOk(modalContent.title)}>
+			<Modal title={modalContent.title} visible={isModalOpen} onOk={() => handleOk(modalContent.title)} cancelButtonProps={{ style: { display: 'none' }}}>
 				<p>{modalContent.message}</p>
 			</Modal>
 		</>

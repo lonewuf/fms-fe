@@ -30,6 +30,17 @@ const Register: React.FC = () => {
 		}
 	})
 
+	useEffect(() => {
+		const unloadCallback = (event) => {
+			event.preventDefault();
+			event.returnValue = "";
+			return "";
+		  };
+		
+		  window.addEventListener("beforeunload", unloadCallback);
+		  return () => window.removeEventListener("beforeunload", unloadCallback);
+	}, [])
+
 
 	const onFinish = async (values: any) => {
 		try {
@@ -145,7 +156,7 @@ const Register: React.FC = () => {
 					</Card>
 				</Col>
 			</Row>
-			<Modal title={modalContent.title} visible={isModalOpen} onOk={() => handleOk(modalContent.title)}>
+			<Modal title={modalContent.title} visible={isModalOpen} onOk={() => handleOk(modalContent.title)} cancelButtonProps={{ style: { display: 'none '}}}>
 				<p>{modalContent.message}</p>
 			</Modal>
 		</>

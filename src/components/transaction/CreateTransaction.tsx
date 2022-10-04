@@ -1,4 +1,4 @@
-import { ArrowLeftOutlined, CheckOutlined, EditOutlined, InboxOutlined, StopOutlined } from '@ant-design/icons';
+import { ArrowLeftOutlined, CheckOutlined, DeleteOutlined, EditOutlined, InboxOutlined, StopOutlined } from '@ant-design/icons';
 import {
 	Button,
 	Form,
@@ -45,7 +45,8 @@ export const tagColors = {
 	"For Chairperson's Approval": 'cyan',
 	"For Dean's Approval": 'gold',
 	"For VPAA's Approval": 'blue',
-	"Done": 'green'
+	"Done": 'green',
+	"Rejected": 'volcano'
 }
 
 const modalDefaultValues = {
@@ -92,6 +93,16 @@ const CreateTransaction: React.FC = () => {
 		if (operation === 'view' || operation === 'update') {
 			fetchTrasactionData()
 		}
+
+		const unloadCallback = (event) => {
+			event.preventDefault();
+			event.returnValue = "";
+			return "";
+		  };
+		
+		window.addEventListener("beforeunload", unloadCallback);
+		return () => window.removeEventListener("beforeunload", unloadCallback);
+
 
 	}, [])
 
@@ -180,7 +191,7 @@ const CreateTransaction: React.FC = () => {
 		if (Array.isArray(e)) {
 			return e;
 		}
-		return [ e?.fileList.length === 2 ? e?.fileList[1] : e?.fileList[0] ];
+		return e?.fileList.length === 2 ? [ e?.fileList[1] ] : e?.fileList.length ? [ e?.fileList[0] ] : [];
 	};
 
 	const handleOk = (title: string) => {
@@ -214,12 +225,36 @@ const CreateTransaction: React.FC = () => {
 			setIsModalOpen(true)
 		}
 	}
+
+	const handleReject = async (_id: string) => {
+		try {
+			const jwtToken = getToken()
+
+			const response = await axios({ method: 'patch', url: `/transaction/reject/${_id}`, headers: { 'Authorization': `Bearer ${jwtToken}` }})
+			
+			if (response.data.error) {
+				throw new Error(response.data.error.description)
+			}
+
+			setModalContent({
+				title: 'Success',
+				message: 'Form successfully rejected.'
+			})
+			setIsModalOpen(true)
+		} catch (error: any) {
+			setModalContent({
+				title: 'Error',
+				message: error.message
+			})
+			setIsModalOpen(true)
+		}
+	}
 	
 	const renderApproveButton = (_id: string) => {
 		const userType = authState.auth?.userType
 		const checkUserType = formValues.status.status.toLowerCase().includes(userType?.toLocaleLowerCase())
 
-		const condition = userType && (userType === UserType.ADMIN || checkUserType) && formValues.status.status !== 'Done'
+		const condition = userType && (userType === UserType.ADMIN || checkUserType) && formValues.status.status !== 'Done' && formValues.status.status !== 'Rejected'
 
 		return condition ? 
 			<Button style={{marginLeft: '10px'}} onClick={() => handleApprove(_id)} icon={<CheckOutlined />}>
@@ -229,9 +264,23 @@ const CreateTransaction: React.FC = () => {
 			null
 	}
 
+	const renderRejectButton = (_id: string) => {
+		const userType = authState.auth?.userType
+		const checkUserType = formValues.status.status.toLowerCase().includes(userType?.toLocaleLowerCase())
+
+		const condition = userType && (userType === UserType.ADMIN || checkUserType) && formValues.status.status !== 'Done' && formValues.status.status === "For VPAA's Approval"
+
+		return condition ? 
+			<Button style={{marginLeft: '10px'}} onClick={() => handleReject(_id)} icon={<DeleteOutlined />}>
+				Reject
+			</Button>
+			:
+			null
+	}
+
 	return (
 		<>
-			<Button style={{marginRight: '10px'}} onClick={() => navigate({ pathname: '/dashboard'})} icon={<ArrowLeftOutlined />}>
+			<Button  onClick={() => navigate({ pathname: '/dashboard'})} icon={<ArrowLeftOutlined />}>
 				Back
 			</Button>
 			{/* {
@@ -252,6 +301,9 @@ const CreateTransaction: React.FC = () => {
 			}
 			{
 				formValues && renderApproveButton(formValues._id)
+			}
+			{
+				formValues && renderRejectButton(formValues._id)
 			}
 			{
 				formValues && <Typography.Title style={{ marginTop: '20px' }} level={5}>Status: {renderTag(formValues.status.status)} </Typography.Title>
@@ -401,40 +453,23 @@ const CreateTransaction: React.FC = () => {
 				<Input />
 				</Form.Item>
 
-				<Form.Item label="Dragger">
-					<Form.Item name="dragger" valuePropName="fileList" getValueFromEvent={normFile} noStyle>
+				<Form.Item label="File" >
+					<Form.Item name="dragger" valuePropName="fileList" getValueFromEvent={normFile} noStyle rules={[ { required: true, message: 'Please upload your pdf file.'}]}>
 					<Upload.Dragger 
 						name="files" 
 						beforeUpload={(file) => {
-							console.log(file)
 							return false
 						}}
-						accept=".pdf,.docx,.doc"
+						accept=".pdf"
 					>
 						<p className="ant-upload-drag-icon">
 						<InboxOutlined />
 						</p>
 						<p className="ant-upload-text">Click or drag file to this area to upload</p>
-						<p className="ant-upload-hint">Support for a single file with file types .pdf, .doc and .docx.</p>
+						<p className="ant-upload-hint">Support for a single file with file type .pdf.</p>
 					</Upload.Dragger>
 					</Form.Item>
 				</Form.Item>
-
-				{/* <Form.Item
-					name="agreement"
-					valuePropName="checked"
-					rules={[
-						{
-						validator: (_, value) =>
-							value ? Promise.resolve() : Promise.reject(new Error('Should accept agreement')),
-						},
-					]}
-					{...tailFormItemLayout}
-					>
-					<Checkbox>
-						I have read the <a href="">agreement</a>
-					</Checkbox>
-				</Form.Item> */}
 
 				{
 					params._operation !== 'view' ?
@@ -447,7 +482,7 @@ const CreateTransaction: React.FC = () => {
 						null
 				}
 			</Form>
-			<Modal title={modalContent.title} visible={isModalOpen} onOk={() => handleOk(modalContent.title)}>
+			<Modal title={modalContent.title} visible={isModalOpen} onOk={() => handleOk(modalContent.title)} cancelButtonProps={{ style: { display: 'none '}}}>
 				<p>{modalContent.message}</p>
 			</Modal>
 		</>
